@@ -1,421 +1,972 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>FocusFlow AI — Study Timer</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<title>FocusFlow — Local AI Study Coach</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
 <style>
-  :root {
-    --bg:        #0d0f14;
-    --surface:   #13161e;
-    --border:    #1e2330;
-    --accent:    #e8a140;
-    --glow:      rgba(232,161,64,.18);
-    --text:      #e8e2d5;
-    --muted:     #5a5f70;
-    --green:     #5ec88a;
-    --red:       #e05757;
-    --ai:        #7c6af5;
-    --ai-glow:   rgba(124,106,245,.15);
-    --ring-track:#1e2330;
-  }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{
-    background:var(--bg);color:var(--text);
-    font-family:'DM Sans',sans-serif;
-    min-height:100vh;display:flex;flex-direction:column;align-items:center;
-    overflow-x:hidden;
-  }
-  body::before{
-    content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);
-    width:700px;height:500px;
-    background:radial-gradient(ellipse,rgba(232,161,64,.06) 0%,transparent 70%);
-    pointer-events:none;z-index:0;
-  }
+/* ══════════════════════════════════════════════
+   DESIGN: Deep forest / bioluminescent night
+   Aesthetic: Organic dark, teal-mint accents,
+   editorial layout, breathing animations
+══════════════════════════════════════════════ */
+:root{
+  --bg:       #080c0f;
+  --bg2:      #0d1318;
+  --surface:  #111820;
+  --surface2: #162028;
+  --border:   #1d2d38;
+  --border2:  #253545;
+  --accent:   #2dd4a0;
+  --accent2:  #1fa87e;
+  --accentd:  rgba(45,212,160,.12);
+  --warm:     #f0a843;
+  --warmd:    rgba(240,168,67,.12);
+  --red:      #e05c6a;
+  --text:     #ddeae8;
+  --text2:    #8aa8a2;
+  --muted:    #3d5a55;
+  --ai:       #5bb8d4;
+  --aid:      rgba(91,184,212,.1);
+  --ring:     #172530;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Syne',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  cursor:default;
+}
 
-  header{
-    width:100%;padding:22px 36px;
-    display:flex;align-items:center;justify-content:space-between;
-    border-bottom:1px solid var(--border);position:relative;z-index:1;
-  }
-  .logo{font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--accent);}
-  .logo span{color:var(--text);}
-  .logo em{font-style:normal;color:var(--ai);font-size:.85rem;margin-left:6px;
-    border:1px solid rgba(124,106,245,.3);border-radius:20px;padding:2px 8px;
-    font-family:'JetBrains Mono',monospace;}
-  .kbd-hint{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);display:flex;gap:10px;}
-  .kbd{border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:.67rem;}
+/* ── Ambient background ── */
+.ambient{
+  position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;
+}
+.amb-orb{
+  position:absolute;border-radius:50%;filter:blur(80px);opacity:.18;
+  animation:drift 14s ease-in-out infinite alternate;
+}
+.amb-orb:nth-child(1){width:500px;height:500px;background:var(--accent);top:-200px;left:-100px;animation-duration:16s;}
+.amb-orb:nth-child(2){width:400px;height:400px;background:var(--ai);top:40%;right:-150px;animation-duration:20s;animation-delay:-7s;}
+.amb-orb:nth-child(3){width:300px;height:300px;background:var(--warm);bottom:-100px;left:30%;animation-duration:18s;animation-delay:-4s;}
+@keyframes drift{from{transform:translate(0,0) scale(1);}to{transform:translate(40px,30px) scale(1.1);}}
 
-  main{
-    flex:1;width:100%;max-width:1080px;
-    padding:32px 20px 60px;position:relative;z-index:1;
-    display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start;
-  }
+/* noise grain overlay */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:1;opacity:.4;
+}
 
-  .left-panel{display:flex;flex-direction:column;gap:18px;}
-  .right-panel{display:flex;flex-direction:column;gap:18px;}
+/* ── Layout ── */
+.app{position:relative;z-index:2;display:flex;flex-direction:column;min-height:100vh;}
 
-  .card{
-    background:var(--surface);border:1px solid var(--border);
-    border-radius:20px;padding:24px 26px;
-  }
-  .lbl{
-    font-family:'JetBrains Mono',monospace;font-size:.68rem;
-    color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px;
-  }
+/* ── Header ── */
+header{
+  padding:18px 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);
+  background:rgba(8,12,15,.7);
+  position:sticky;top:0;z-index:50;
+}
+.logo{
+  display:flex;align-items:center;gap:10px;
+}
+.logo-mark{
+  width:32px;height:32px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--ai));
+  display:flex;align-items:center;justify-content:center;
+  font-size:.9rem;box-shadow:0 0 20px rgba(45,212,160,.3);
+}
+.logo-text{
+  font-size:1.15rem;font-weight:800;letter-spacing:-.02em;
+  color:var(--text);
+}
+.logo-text span{color:var(--accent);}
+.logo-badge{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  background:var(--accentd);border:1px solid rgba(45,212,160,.25);
+  color:var(--accent);border-radius:20px;padding:2px 8px;
+  letter-spacing:.08em;
+}
+.header-right{display:flex;align-items:center;gap:16px;}
+.kbd-row{
+  display:flex;gap:8px;
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);
+}
+.k{
+  border:1px solid var(--border2);border-radius:5px;
+  padding:2px 7px;color:var(--text2);font-size:.62rem;
+}
+.ai-status{
+  display:flex;align-items:center;gap:6px;
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--ai);
+  border:1px solid rgba(91,184,212,.2);border-radius:20px;padding:4px 10px;
+}
+.ai-pulse{
+  width:6px;height:6px;border-radius:50%;background:var(--ai);
+  box-shadow:0 0 8px var(--ai);
+  animation:blink 2s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
 
-  /* ── Goal row ── */
-  .goal-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
-  .preset{
-    background:var(--ring-track);border:1px solid var(--border);border-radius:10px;
-    padding:8px 14px;font-family:'JetBrains Mono',monospace;font-size:.82rem;
-    color:var(--text);cursor:pointer;transition:all .2s;
-  }
-  .preset:hover,.preset.active{background:var(--accent);color:#000;border-color:var(--accent);}
-  .custom-wrap{
-    display:flex;align-items:center;gap:5px;background:var(--ring-track);
-    border:1px solid var(--border);border-radius:10px;padding:6px 11px;flex:1;min-width:120px;
-  }
-  .custom-wrap input{
-    background:none;border:none;outline:none;color:var(--accent);
-    font-family:'JetBrains Mono',monospace;font-size:.92rem;width:44px;text-align:center;
-  }
-  .custom-wrap input::-webkit-inner-spin-button{display:none;}
-  .custom-wrap span{color:var(--muted);font-size:.78rem;}
+/* ── Main grid ── */
+main{
+  flex:1;display:grid;
+  grid-template-columns:1fr 380px;
+  grid-template-rows:auto;
+  gap:0;
+  max-width:1200px;width:100%;margin:0 auto;padding:0;
+}
 
-  /* ── Ring ── */
-  .timer-center{display:flex;flex-direction:column;align-items:center;gap:22px;padding:28px 0 16px;}
-  .ring-wrap{position:relative;width:220px;height:220px;}
-  svg.ring-svg{width:220px;height:220px;transform:rotate(-90deg);overflow:visible;}
-  .ring-track-el{fill:none;stroke:var(--ring-track);stroke-width:11;}
-  .ring-prog{
-    fill:none;stroke:var(--accent);stroke-width:11;stroke-linecap:round;
-    stroke-dasharray:621.8;stroke-dashoffset:621.8;
-    transition:stroke-dashoffset .9s cubic-bezier(.4,0,.2,1),stroke .4s;
-    filter:drop-shadow(0 0 7px var(--accent));
-  }
-  .ring-inner{
-    position:absolute;inset:0;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;gap:1px;
-  }
-  .ring-time{font-family:'JetBrains Mono',monospace;font-size:2.3rem;font-weight:600;line-height:1;}
-  .ring-pct{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--accent);}
-  .ring-status{font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;
-    letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+/* ── Left column ── */
+.col-left{
+  padding:28px 24px 40px 28px;
+  display:flex;flex-direction:column;gap:20px;
+  border-right:1px solid var(--border);
+}
 
-  .controls{display:flex;gap:10px;align-items:center;}
-  .btn-main{
-    display:flex;align-items:center;gap:7px;padding:13px 30px;border-radius:50px;
-    font-size:.92rem;font-weight:500;cursor:pointer;border:none;transition:all .2s;
-    font-family:'DM Sans',sans-serif;
-  }
-  .btn-go{background:var(--accent);color:#000;box-shadow:0 0 20px var(--glow);}
-  .btn-go:hover{background:#f0b050;transform:translateY(-1px);}
-  .btn-pause-style{background:var(--ring-track);color:var(--text);border:1px solid var(--border);}
-  .btn-pause-style:hover{background:var(--border);}
-  .btn-icon{
-    width:42px;height:42px;border-radius:50%;background:var(--ring-track);
-    border:1px solid var(--border);color:var(--muted);font-size:.95rem;
-    cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;
-  }
-  .btn-icon:hover{border-color:var(--muted);color:var(--text);}
+/* Goal card */
+.goal-card{
+  background:var(--surface);
+  border:1px solid var(--border);border-radius:18px;
+  padding:20px 22px;
+}
+.card-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:6px;
+}
+.card-label::before{content:'';display:block;width:12px;height:1px;background:var(--muted);}
 
-  /* Break banner */
-  .break-banner{
-    display:none;align-items:center;gap:8px;
-    background:rgba(94,200,138,.1);border:1px solid rgba(94,200,138,.25);
-    border-radius:12px;padding:11px 14px;font-size:.83rem;color:var(--green);
-    animation:slideIn .4s ease;
-  }
-  .break-banner.show{display:flex;}
-  @keyframes slideIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+.presets{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.preset{
+  background:transparent;border:1px solid var(--border2);border-radius:10px;
+  padding:8px 14px;
+  font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text2);
+  cursor:pointer;transition:all .2s;letter-spacing:.04em;
+}
+.preset:hover{border-color:var(--accent);color:var(--accent);background:var(--accentd);}
+.preset.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600;}
+.custom-box{
+  display:flex;align-items:center;gap:5px;
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:10px;padding:7px 12px;flex:1;min-width:110px;
+}
+.custom-box input{
+  background:none;border:none;outline:none;
+  color:var(--accent);font-family:'JetBrains Mono',monospace;
+  font-size:.88rem;width:40px;text-align:center;
+}
+.custom-box input::-webkit-inner-spin-button{display:none;}
+.custom-box span{color:var(--muted);font-size:.72rem;font-family:'JetBrains Mono',monospace;}
 
-  /* Stats */
-  .stats-row{display:flex;border:1px solid var(--border);border-radius:14px;overflow:hidden;}
-  .stat{flex:1;padding:12px 10px;border-right:1px solid var(--border);text-align:center;}
-  .stat:last-child{border-right:none;}
-  .sv{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:600;color:var(--accent);}
-  .sk{font-size:.7rem;color:var(--muted);margin-top:1px;}
+/* ── Timer section ── */
+.timer-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:18px;
+  padding:32px 24px 28px;
+  display:flex;flex-direction:column;align-items:center;gap:24px;
+  position:relative;overflow:hidden;
+}
+.timer-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(45,212,160,.05) 0%,transparent 60%);
+  pointer-events:none;
+}
 
-  /* ── AI Chat ── */
-  .ai-card{
-    background:var(--surface);
-    border:1px solid rgba(124,106,245,.3);
-    border-radius:20px;overflow:hidden;
-    display:flex;flex-direction:column;
-    height:520px;
-  }
-  .ai-header{
-    padding:16px 20px;border-bottom:1px solid rgba(124,106,245,.15);
-    display:flex;align-items:center;gap:10px;
-    background:rgba(124,106,245,.06);
-  }
-  .ai-avatar{
-    width:32px;height:32px;border-radius:50%;
-    background:linear-gradient(135deg,#7c6af5,#a89af8);
-    display:flex;align-items:center;justify-content:center;
-    font-size:.9rem;flex-shrink:0;
-    box-shadow:0 0 12px var(--ai-glow);
-  }
-  .ai-name{font-weight:500;font-size:.88rem;}
-  .ai-sub{font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
-  .ai-dot{
-    width:7px;height:7px;border-radius:50%;background:var(--green);
-    margin-left:auto;box-shadow:0 0 6px var(--green);
-    animation:pulse 2s infinite;
-  }
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+/* Ring */
+.ring-outer{position:relative;width:230px;height:230px;}
+.ring-svg{width:230px;height:230px;transform:rotate(-90deg);overflow:visible;}
+.rt{fill:none;stroke:var(--ring);stroke-width:10;}
+.rp{
+  fill:none;stroke:var(--accent);stroke-width:10;stroke-linecap:round;
+  stroke-dasharray:659.7;stroke-dashoffset:659.7;
+  transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1),stroke .5s;
+  filter:drop-shadow(0 0 8px var(--accent));
+}
+/* secondary thin ring for aesthetics */
+.rs{fill:none;stroke:var(--border2);stroke-width:1;stroke-dasharray:4 8;}
 
-  .chat-body{
-    flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;
-    scroll-behavior:smooth;
-  }
-  .chat-body::-webkit-scrollbar{width:4px;}
-  .chat-body::-webkit-scrollbar-track{background:transparent;}
-  .chat-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.ring-center{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+}
+.ring-t{
+  font-family:'JetBrains Mono',monospace;
+  font-size:2.4rem;font-weight:600;letter-spacing:.03em;
+  color:var(--text);line-height:1;
+  text-shadow:0 0 30px rgba(45,212,160,.2);
+}
+.ring-p{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.78rem;color:var(--accent);margin-top:4px;letter-spacing:.06em;
+}
+.ring-s{
+  font-family:'JetBrains Mono',monospace;font-size:.62rem;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-top:3px;
+}
 
-  .msg{display:flex;gap:8px;align-items:flex-start;animation:fadeUp .3s ease;}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
-  .msg.user{flex-direction:row-reverse;}
+/* Tick marks around ring */
+.ring-ticks{position:absolute;inset:0;pointer-events:none;}
 
-  .msg-avatar{
-    width:26px;height:26px;border-radius:50%;flex-shrink:0;
-    display:flex;align-items:center;justify-content:center;font-size:.7rem;
-    margin-top:2px;
-  }
-  .msg.ai .msg-avatar{background:linear-gradient(135deg,#7c6af5,#a89af8);}
-  .msg.user .msg-avatar{background:var(--ring-track);border:1px solid var(--border);color:var(--muted);}
+/* Controls */
+.controls{display:flex;align-items:center;gap:12px;}
+.btn-primary{
+  display:flex;align-items:center;gap:8px;
+  padding:13px 32px;border-radius:50px;border:none;cursor:pointer;
+  font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;
+  letter-spacing:.03em;transition:all .25s;
+  background:linear-gradient(135deg,var(--accent),var(--ai));
+  color:#000;box-shadow:0 4px 24px rgba(45,212,160,.25);
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(45,212,160,.35);}
+.btn-primary:active{transform:translateY(0);}
+.btn-primary.paused{
+  background:var(--surface2);color:var(--text);
+  border:1px solid var(--border2);box-shadow:none;
+}
+.btn-primary.paused:hover{border-color:var(--accent);color:var(--accent);}
+.btn-round{
+  width:42px;height:42px;border-radius:50%;
+  background:var(--surface2);border:1px solid var(--border2);
+  color:var(--text2);font-size:.9rem;cursor:pointer;
+  transition:all .2s;display:flex;align-items:center;justify-content:center;
+}
+.btn-round:hover{border-color:var(--accent);color:var(--accent);}
 
-  .msg-bubble{
-    max-width:82%;padding:10px 14px;border-radius:16px;
-    font-size:.83rem;line-height:1.55;
-  }
-  .msg.ai .msg-bubble{
-    background:rgba(124,106,245,.1);border:1px solid rgba(124,106,245,.18);
-    color:var(--text);border-radius:4px 16px 16px 16px;
-  }
-  .msg.user .msg-bubble{
-    background:var(--accent);color:#000;font-weight:500;
-    border-radius:16px 4px 16px 16px;
-  }
+/* Break banner */
+.break-strip{
+  display:none;width:100%;align-items:center;gap:10px;
+  background:rgba(240,168,67,.08);border:1px solid rgba(240,168,67,.2);
+  border-radius:12px;padding:11px 16px;
+  font-size:.82rem;color:var(--warm);
+  animation:slideDown .4s ease;
+}
+.break-strip.show{display:flex;}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+.break-strip button{
+  margin-left:auto;background:none;border:none;
+  color:var(--warm);cursor:pointer;font-size:1rem;opacity:.7;
+}
 
-  .typing-indicator{display:flex;gap:4px;padding:4px 2px;}
-  .typing-indicator span{
-    width:6px;height:6px;border-radius:50%;background:var(--ai);
-    animation:bounce 1.2s infinite;
-  }
-  .typing-indicator span:nth-child(2){animation-delay:.2s;}
-  .typing-indicator span:nth-child(3){animation-delay:.4s;}
-  @keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+/* Stats */
+.stats-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border:1px solid var(--border);border-radius:14px;overflow:hidden;
+}
+.stat{
+  padding:14px 10px;text-align:center;
+  border-right:1px solid var(--border);
+  background:var(--surface);
+  transition:background .2s;
+}
+.stat:last-child{border-right:none;}
+.stat:hover{background:var(--surface2);}
+.sv{
+  font-family:'JetBrains Mono',monospace;font-size:1rem;
+  font-weight:600;color:var(--accent);
+}
+.sk{font-size:.66rem;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace;letter-spacing:.06em;}
 
-  /* Quick prompts */
-  .quick-prompts{
-    padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap;
-    border-top:1px solid var(--border);
-  }
-  .qp{
-    background:var(--ring-track);border:1px solid var(--border);
-    border-radius:20px;padding:5px 11px;font-size:.73rem;
-    color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap;
-  }
-  .qp:hover{border-color:var(--ai);color:var(--ai);}
+/* Session log */
+.log-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:18px;padding:18px 20px;
+  max-height:200px;display:flex;flex-direction:column;
+}
+.log-scroll{
+  flex:1;overflow-y:auto;display:flex;flex-direction:column;
+  gap:6px;margin-top:10px;padding-right:4px;
+}
+.log-scroll::-webkit-scrollbar{width:3px;}
+.log-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.log-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;background:var(--bg2);border-radius:8px;
+  animation:fadeUp .3s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+.ld{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.ld.work{background:var(--accent);}
+.ld.pause{background:var(--muted);}
+.lt{flex:1;font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.ldur{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text2);font-weight:600;}
+.log-empty{color:var(--muted);font-size:.78rem;text-align:center;
+  margin-top:12px;font-family:'Lora',serif;font-style:italic;}
 
-  /* Chat input */
-  .chat-input-row{
-    padding:12px 14px;border-top:1px solid var(--border);
-    display:flex;gap:8px;align-items:flex-end;
-  }
-  .chat-input{
-    flex:1;background:var(--ring-track);border:1px solid var(--border);
-    border-radius:12px;padding:10px 14px;color:var(--text);
-    font-family:'DM Sans',sans-serif;font-size:.84rem;outline:none;
-    resize:none;max-height:100px;line-height:1.5;
-    transition:border-color .2s;
-  }
-  .chat-input:focus{border-color:rgba(124,106,245,.4);}
-  .chat-input::placeholder{color:var(--muted);}
-  .send-btn{
-    width:38px;height:38px;border-radius:50%;
-    background:var(--ai);border:none;color:#fff;
-    font-size:.9rem;cursor:pointer;transition:all .2s;
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;
-    box-shadow:0 0 12px var(--ai-glow);
-  }
-  .send-btn:hover{background:#9585f7;transform:scale(1.05);}
-  .send-btn:disabled{background:var(--border);box-shadow:none;cursor:not-allowed;}
+/* ── Right column: AI ── */
+.col-right{
+  display:flex;flex-direction:column;
+  height:calc(100vh - 61px);
+  position:sticky;top:61px;
+}
 
-  /* Session log */
-  .log-card{
-    background:var(--surface);border:1px solid var(--border);
-    border-radius:20px;padding:20px 22px;max-height:220px;
-    display:flex;flex-direction:column;
-  }
-  .log-list{
-    flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;
-    margin-top:10px;padding-right:3px;
-  }
-  .log-list::-webkit-scrollbar{width:3px;}
-  .log-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
-  .log-entry{
-    display:flex;align-items:center;gap:9px;padding:9px 11px;
-    background:var(--ring-track);border-radius:9px;animation:fadeUp .3s ease;
-  }
-  .ld{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-  .ld.work{background:var(--accent);}
-  .ld.pause{background:var(--muted);}
-  .lt{flex:1;font-size:.77rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
-  .ldur{font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--text);font-weight:600;}
-  .log-empty-msg{color:var(--muted);font-size:.8rem;text-align:center;margin-top:16px;
-    font-family:'DM Serif Display',serif;font-style:italic;}
+.ai-header{
+  padding:18px 22px 14px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+  display:flex;align-items:center;gap:12px;
+}
+.ai-icon{
+  width:38px;height:38px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(135deg,#1a3a4a,#0d2535);
+  border:1px solid rgba(91,184,212,.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;box-shadow:0 0 16px rgba(91,184,212,.15);
+  position:relative;overflow:hidden;
+}
+.ai-icon::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(91,184,212,.1),transparent);
+}
+.ai-info{flex:1;}
+.ai-name{font-size:.9rem;font-weight:700;color:var(--text);}
+.ai-desc{
+  font-size:.68rem;color:var(--ai);
+  font-family:'JetBrains Mono',monospace;margin-top:1px;
+}
+.ai-brain-badge{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  color:var(--muted);border:1px solid var(--border2);
+  border-radius:20px;padding:3px 9px;letter-spacing:.06em;
+}
 
-  /* Completion overlay */
-  .overlay{
-    display:none;position:fixed;inset:0;background:rgba(13,15,20,.93);z-index:100;
-    align-items:center;justify-content:center;flex-direction:column;gap:14px;
-  }
-  .overlay.show{display:flex;}
-  .ov-emoji{font-size:3.8rem;animation:pop .6s cubic-bezier(.34,1.56,.64,1);}
-  .ov-title{font-family:'DM Serif Display',serif;font-size:2rem;color:var(--accent);
-    animation:pop .6s .1s cubic-bezier(.34,1.56,.64,1) both;}
-  .ov-sub{color:var(--muted);font-size:.9rem;animation:pop .6s .2s cubic-bezier(.34,1.56,.64,1) both;}
-  .ov-btn{
-    margin-top:8px;padding:11px 28px;background:var(--accent);color:#000;
-    border:none;border-radius:50px;font-size:.9rem;font-weight:600;cursor:pointer;
-    animation:pop .6s .3s cubic-bezier(.34,1.56,.64,1) both;font-family:'DM Sans',sans-serif;
-  }
-  @keyframes pop{from{opacity:0;transform:scale(.6);}to{opacity:1;transform:scale(1);}}
+/* Chat */
+.chat-messages{
+  flex:1;overflow-y:auto;padding:16px;
+  display:flex;flex-direction:column;gap:12px;
+  background:var(--bg);
+  scroll-behavior:smooth;
+}
+.chat-messages::-webkit-scrollbar{width:3px;}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 
-  @media(max-width:720px){
-    main{grid-template-columns:1fr;}
-    .right-panel{order:-1;}
-    .ai-card{height:400px;}
-    header{padding:16px 18px;}
-    main{padding:20px 14px 40px;}
-  }
+.msg{display:flex;gap:8px;align-items:flex-start;animation:msgIn .3s ease;}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.msg.user{flex-direction:row-reverse;}
+
+.msg-av{
+  width:28px;height:28px;border-radius:9px;
+  flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:.72rem;margin-top:2px;
+}
+.msg.ai .msg-av{
+  background:linear-gradient(135deg,#1a3a4a,#0d2535);
+  border:1px solid rgba(91,184,212,.2);
+  box-shadow:0 0 10px rgba(91,184,212,.1);
+}
+.msg.user .msg-av{background:var(--surface2);border:1px solid var(--border2);}
+
+.msg-b{
+  max-width:84%;padding:10px 14px;border-radius:14px;
+  font-size:.82rem;line-height:1.6;
+}
+.msg.ai .msg-b{
+  background:var(--surface);border:1px solid var(--border2);
+  color:var(--text);border-radius:4px 14px 14px 14px;
+}
+.msg.user .msg-b{
+  background:linear-gradient(135deg,var(--accent),#25b88e);
+  color:#000;font-weight:600;border-radius:14px 4px 14px 14px;
+}
+.msg-time{
+  font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  color:var(--muted);margin-top:4px;
+}
+
+/* AI thinking indicator */
+.thinking{display:flex;gap:4px;padding:2px 0;}
+.thinking span{
+  width:5px;height:5px;border-radius:50%;background:var(--ai);
+  animation:think 1.4s ease-in-out infinite;
+}
+.thinking span:nth-child(2){animation-delay:.2s;}
+.thinking span:nth-child(3){animation-delay:.4s;}
+@keyframes think{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-6px);opacity:1;}}
+
+/* AI mood indicator */
+.ai-mood{
+  padding:8px 16px;display:flex;align-items:center;gap:8px;
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  background:var(--surface);
+}
+.mood-label{font-size:.65rem;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.08em;}
+.mood-bar{flex:1;height:3px;background:var(--border);border-radius:3px;overflow:hidden;}
+.mood-fill{height:100%;border-radius:3px;transition:width .8s ease,background .5s;}
+.mood-emoji{font-size:.9rem;}
+
+/* Quick chips */
+.quick-chips{
+  padding:10px 14px;display:flex;gap:6px;flex-wrap:wrap;
+  border-bottom:1px solid var(--border);background:var(--surface);
+}
+.chip{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:20px;padding:5px 11px;font-size:.71rem;
+  color:var(--text2);cursor:pointer;transition:all .18s;
+  font-family:'JetBrains Mono',monospace;letter-spacing:.03em;
+  white-space:nowrap;
+}
+.chip:hover{border-color:var(--ai);color:var(--ai);background:var(--aid);}
+
+/* Input area */
+.chat-input-area{
+  padding:12px 14px;border-top:1px solid var(--border);
+  background:var(--surface);display:flex;gap:8px;align-items:flex-end;
+}
+.chat-input{
+  flex:1;background:var(--bg2);border:1px solid var(--border2);
+  border-radius:12px;padding:10px 14px;color:var(--text);
+  font-family:'Syne',sans-serif;font-size:.82rem;outline:none;
+  resize:none;max-height:90px;line-height:1.5;transition:border-color .2s;
+}
+.chat-input:focus{border-color:rgba(91,184,212,.35);}
+.chat-input::placeholder{color:var(--muted);}
+.send-btn{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,var(--ai),#4a9db8);
+  border:none;color:#000;font-size:.85rem;cursor:pointer;
+  transition:all .2s;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;box-shadow:0 4px 14px rgba(91,184,212,.25);font-weight:700;
+}
+.send-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(91,184,212,.35);}
+.send-btn:disabled{background:var(--border);box-shadow:none;cursor:not-allowed;}
+
+/* ── Completion overlay ── */
+.overlay{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(8,12,15,.95);backdrop-filter:blur(12px);
+  align-items:center;justify-content:center;flex-direction:column;gap:16px;
+}
+.overlay.show{display:flex;}
+.ov-ring{
+  width:120px;height:120px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--ai));
+  display:flex;align-items:center;justify-content:center;font-size:2.8rem;
+  box-shadow:0 0 60px rgba(45,212,160,.4);
+  animation:popIn .7s cubic-bezier(.34,1.56,.64,1);
+}
+.ov-title{
+  font-size:2.2rem;font-weight:800;color:var(--text);
+  animation:popIn .7s .1s cubic-bezier(.34,1.56,.64,1) both;
+  letter-spacing:-.02em;
+}
+.ov-sub{color:var(--text2);font-size:.9rem;animation:popIn .7s .2s cubic-bezier(.34,1.56,.64,1) both;
+  font-family:'Lora',serif;font-style:italic;}
+.ov-stats{
+  display:flex;gap:20px;animation:popIn .7s .3s cubic-bezier(.34,1.56,.64,1) both;
+}
+.ov-stat{text-align:center;}
+.ov-sv{font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:600;color:var(--accent);}
+.ov-sk{font-size:.7rem;color:var(--muted);margin-top:2px;}
+.ov-btn{
+  padding:13px 32px;background:linear-gradient(135deg,var(--accent),var(--ai));
+  color:#000;border:none;border-radius:50px;font-size:.9rem;font-weight:700;
+  cursor:pointer;animation:popIn .7s .4s cubic-bezier(.34,1.56,.64,1) both;
+  font-family:'Syne',sans-serif;box-shadow:0 6px 24px rgba(45,212,160,.3);
+}
+@keyframes popIn{from{opacity:0;transform:scale(.5);}to{opacity:1;transform:scale(1);}}
+
+/* ── Responsive ── */
+@media(max-width:750px){
+  main{grid-template-columns:1fr;grid-template-rows:auto auto;}
+  .col-right{height:500px;position:relative;top:0;border-top:1px solid var(--border);}
+  .col-left{padding:20px 16px 28px;}
+  header{padding:14px 16px;}
+  .kbd-row{display:none;}
+  .ring-outer{width:200px;height:200px;}
+  .ring-svg{width:200px;height:200px;}
+  .ring-t{font-size:2rem;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .stats-grid .stat:nth-child(2){border-right:none;}
+  .stats-grid .stat:nth-child(3){border-top:1px solid var(--border);}
+  .stats-grid .stat:nth-child(4){border-top:1px solid var(--border);}
+}
 </style>
 </head>
 <body>
 
+<div class="ambient">
+  <div class="amb-orb"></div>
+  <div class="amb-orb"></div>
+  <div class="amb-orb"></div>
+</div>
+
+<div class="app">
 <header>
-  <div class="logo">Focus<span>Flow</span><em>AI</em></div>
-  <div class="kbd-hint">
-    <span><kbd class="kbd">Space</kbd> pause</span>
-    <span><kbd class="kbd">R</kbd> reset</span>
+  <div class="logo">
+    <div class="logo-mark">⚡</div>
+    <div class="logo-text">Focus<span>Flow</span></div>
+    <div class="logo-badge">LOCAL AI</div>
+  </div>
+  <div class="header-right">
+    <div class="kbd-row">
+      <span><kbd class="k">Space</kbd> pause</span>
+      <span><kbd class="k">R</kbd> reset</span>
+    </div>
+    <div class="ai-status">
+      <div class="ai-pulse"></div>
+      IRIS online
+    </div>
   </div>
 </header>
 
 <main>
-  <!-- ── LEFT ── -->
-  <div class="left-panel">
+  <!-- ══ LEFT COLUMN ══ -->
+  <div class="col-left">
 
-    <div class="card">
-      <div class="lbl">Today's Goal</div>
-      <div class="goal-row">
-        <button class="preset" data-min="25">25 min</button>
-        <button class="preset" data-min="60">1 hr</button>
-        <button class="preset" data-min="120">2 hr</button>
-        <button class="preset active" data-min="180">3 hr</button>
-        <button class="preset" data-min="300">5 hr</button>
-        <div class="custom-wrap">
-          <input type="number" id="customMin" value="180" min="1" max="720"/>
+    <!-- Goal -->
+    <div class="goal-card">
+      <div class="card-label">Study Goal</div>
+      <div class="presets">
+        <button class="preset" data-min="25">25m</button>
+        <button class="preset" data-min="60">1h</button>
+        <button class="preset" data-min="90">1.5h</button>
+        <button class="preset active" data-min="120">2h</button>
+        <button class="preset" data-min="180">3h</button>
+        <button class="preset" data-min="300">5h</button>
+        <div class="custom-box">
+          <input type="number" id="customMin" value="120" min="1" max="720"/>
           <span>min</span>
         </div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="timer-center">
-        <div class="ring-wrap">
-          <svg class="ring-svg" viewBox="0 0 220 220">
-            <circle class="ring-track-el" cx="110" cy="110" r="99"/>
-            <circle class="ring-prog" id="ringProg" cx="110" cy="110" r="99"/>
-          </svg>
-          <div class="ring-inner">
-            <div class="ring-time" id="dispTime">00:00:00</div>
-            <div class="ring-pct" id="dispPct">0% done</div>
-            <div class="ring-status" id="dispStatus">Ready</div>
-          </div>
+    <!-- Timer -->
+    <div class="timer-card">
+      <div class="ring-outer">
+        <svg class="ring-svg" viewBox="0 0 230 230">
+          <!-- decorative dashed ring -->
+          <circle class="rs" cx="115" cy="115" r="105"/>
+          <!-- track -->
+          <circle class="rt" cx="115" cy="115" r="105"/>
+          <!-- progress -->
+          <circle class="rp" id="ringProg" cx="115" cy="115" r="105"/>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-t" id="dispTime">00:00:00</div>
+          <div class="ring-p" id="dispPct">0% complete</div>
+          <div class="ring-s" id="dispStatus">ready</div>
         </div>
-        <div class="controls">
-          <button class="btn-icon" id="resetBtn" title="Reset (R)">↺</button>
-          <button class="btn-main btn-go" id="mainBtn">▶ &nbsp;Start Session</button>
-        </div>
-        <div class="break-banner" id="breakBanner">
-          ☕ &nbsp;<strong>Break time!</strong>&nbsp; You've earned it.
-          <button onclick="this.parentElement.classList.remove('show')"
-            style="margin-left:auto;background:none;border:none;color:var(--green);cursor:pointer;">✕</button>
-        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn-round" id="resetBtn" title="Reset">↺</button>
+        <button class="btn-primary" id="mainBtn">▶ &nbsp;Begin Focus</button>
+        <button class="btn-round" id="skipBtn" title="Skip break" style="display:none">⏭</button>
+      </div>
+
+      <div class="break-strip" id="breakStrip">
+        🌿 &nbsp;<strong>Break checkpoint!</strong>&nbsp; Your brain needs rest.
+        <button onclick="this.parentElement.classList.remove('show')">✕</button>
       </div>
     </div>
 
-    <div class="stats-row">
-      <div class="stat"><div class="sv" id="sWorked">0:00</div><div class="sk">Worked</div></div>
-      <div class="stat"><div class="sv" id="sRemain">—</div><div class="sk">Remaining</div></div>
-      <div class="stat"><div class="sv" id="sSessions">0</div><div class="sk">Sessions</div></div>
-      <div class="stat"><div class="sv" id="sBreaks">0</div><div class="sk">Pauses</div></div>
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat"><div class="sv" id="sWorked">0:00</div><div class="sk">worked</div></div>
+      <div class="stat"><div class="sv" id="sRemain">—</div><div class="sk">remain</div></div>
+      <div class="stat"><div class="sv" id="sSess">0</div><div class="sk">sessions</div></div>
+      <div class="stat"><div class="sv" id="sPause">0</div><div class="sk">pauses</div></div>
     </div>
 
+    <!-- Log -->
     <div class="log-card">
-      <div class="lbl">Session Log</div>
-      <div class="log-list" id="logList">
-        <div class="log-empty-msg" id="logEmpty">Start the timer to track sessions.</div>
+      <div class="card-label">Activity Log</div>
+      <div class="log-scroll" id="logScroll">
+        <div class="log-empty" id="logEmpty">Your session history will appear here.</div>
       </div>
     </div>
 
   </div>
 
-  <!-- ── RIGHT: AI Coach ── -->
-  <div class="right-panel">
-    <div class="ai-card">
-      <div class="ai-header">
-        <div class="ai-avatar">🧠</div>
-        <div>
-          <div class="ai-name">Nova — Study Coach</div>
-          <div class="ai-sub">Powered by Claude</div>
-        </div>
-        <div class="ai-dot"></div>
-      </div>
+  <!-- ══ RIGHT COLUMN: IRIS AI ══ -->
+  <div class="col-right">
 
-      <div class="chat-body" id="chatBody">
-        <!-- messages injected here -->
+    <div class="ai-header">
+      <div class="ai-icon">🧬</div>
+      <div class="ai-info">
+        <div class="ai-name">IRIS</div>
+        <div class="ai-desc">Intelligent Response &amp; Insight System</div>
       </div>
-
-      <div class="quick-prompts" id="quickPrompts">
-        <button class="qp" onclick="sendQuick('Give me a study tip for staying focused')">💡 Study tip</button>
-        <button class="qp" onclick="sendQuick('How am I doing so far?')">📊 My progress</button>
-        <button class="qp" onclick="sendQuick('I feel distracted, help me refocus')">🎯 Refocus me</button>
-        <button class="qp" onclick="sendQuick('What should I do during my break?')">☕ Break ideas</button>
-        <button class="qp" onclick="sendQuick('Motivate me to keep going!')">🔥 Motivate me</button>
-      </div>
-
-      <div class="chat-input-row">
-        <textarea class="chat-input" id="chatInput" placeholder="Ask Nova anything..." rows="1"></textarea>
-        <button class="send-btn" id="sendBtn" title="Send">➤</button>
-      </div>
+      <div class="ai-brain-badge">LOCAL ML</div>
     </div>
+
+    <div class="ai-mood" id="moodBar">
+      <span class="mood-emoji" id="moodEmoji">🌱</span>
+      <div class="mood-label">FOCUS ENERGY</div>
+      <div class="mood-bar"><div class="mood-fill" id="moodFill" style="width:20%;background:var(--accent)"></div></div>
+      <span class="mood-label" id="moodLabel">WARMING UP</span>
+    </div>
+
+    <div class="chat-messages" id="chatMessages"></div>
+
+    <div class="quick-chips">
+      <span class="chip" onclick="sendQ('study tip')">💡 Tip</span>
+      <span class="chip" onclick="sendQ('how am i doing')">📊 Progress</span>
+      <span class="chip" onclick="sendQ('i feel distracted')">🎯 Refocus</span>
+      <span class="chip" onclick="sendQ('break ideas')">☕ Break</span>
+      <span class="chip" onclick="sendQ('motivate me')">🔥 Motivate</span>
+      <span class="chip" onclick="sendQ('anxiety')">🧘 Calm</span>
+    </div>
+
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="chatInput" placeholder="Talk to IRIS..." rows="1"></textarea>
+      <button class="send-btn" id="sendBtn">➤</button>
+    </div>
+
   </div>
 </main>
+</div>
 
 <!-- Completion overlay -->
 <div class="overlay" id="overlay">
-  <div class="ov-emoji">🎯</div>
-  <div class="ov-title">Goal Achieved!</div>
-  <div class="ov-sub" id="ovSub">Amazing work today.</div>
+  <div class="ov-ring">🎯</div>
+  <div class="ov-title">Session Complete!</div>
+  <div class="ov-sub" id="ovSub">You achieved your study goal today.</div>
+  <div class="ov-stats">
+    <div class="ov-stat"><div class="ov-sv" id="ovTime">—</div><div class="ov-sk">Total Time</div></div>
+    <div class="ov-stat"><div class="ov-sv" id="ovSess">—</div><div class="ov-sk">Sessions</div></div>
+    <div class="ov-stat"><div class="ov-sv" id="ovScore">—</div><div class="ov-sk">Focus Score</div></div>
+  </div>
   <button class="ov-btn" onclick="resetAll();document.getElementById('overlay').classList.remove('show')">New Session</button>
 </div>
 
 <script>
-// ─── Timer State ─────────────────────────────────────────────────────────────
-const CIRC = 2 * Math.PI * 99; // 621.8
-let goalSec    = 180 * 60;
-let elapsed    = 0;
-let running    = false;
-let timer      = null;
-let sessStart  = null;
-let sessCount  = 0;
-let pauseCount = 0;
-let breakMark  = [];
+// ════════════════════════════════════════════════════════
+//  IRIS — Local AI Engine
+//  Architecture:
+//   1. NLP Tokenizer + Intent Classifier (TF-IDF inspired)
+//   2. Context-Aware Response Generator
+//   3. Sentiment Analyzer
+//   4. Focus Score Calculator (decision tree)
+//   5. Adaptive memory (session-local)
+// ════════════════════════════════════════════════════════
+
+const IRIS = (() => {
+
+  // ── Knowledge Base ──────────────────────────────────────
+  const KB = {
+    studyTips: [
+      "Use the **Feynman Technique** — explain what you're studying to an imaginary student. If you get stuck, you've found your knowledge gap.",
+      "Try **spaced repetition**: review material at increasing intervals — 1 day, 3 days, 7 days, 21 days. This builds long-term memory far better than cramming.",
+      "Create a **brain dump** before studying: write everything on your mind on paper, then set it aside. It clears working memory for deep focus.",
+      "Work in **full-screen mode** and use one tab only. Every open tab is a cognitive tax on your attention.",
+      "Handwrite your key concepts. The **generation effect** proves that handwriting beats typing for memory retention.",
+      "Use **active recall**: close your notes and try to write down everything you remember. Check after. This is 3× more effective than re-reading.",
+      "Set a **specific outcome** for each session: not 'study math', but 'understand chapters 4-5 and solve 10 problems'.",
+      "The **2-minute rule**: if a micro-task takes less than 2 min, do it immediately so it doesn't occupy mental bandwidth.",
+      "Study your **hardest subject first**, when your prefrontal cortex is freshest. Save light review for later.",
+      "**Interleave** subjects: switching between topics during a session improves long-term retention vs. blocked practice.",
+    ],
+    breakIdeas: [
+      "Do **4-7-8 breathing**: inhale 4s, hold 7s, exhale 8s. Two cycles reset your nervous system.",
+      "Walk for 5 minutes — even pacing your room. Movement increases BDNF, a protein that helps neurons connect.",
+      "Drink a full glass of water. Even **1% dehydration** reduces cognitive performance measurably.",
+      "Do a **body scan**: sit still, close eyes, slowly notice each part of your body from feet upward.",
+      "Stand and do 10 slow neck rolls. Screen use tightens the suboccipital muscles that affect focus and headaches.",
+      "Step outside or look at something 20 feet away for 2 minutes. The **20-20-20 rule** reduces eye strain significantly.",
+      "Write 3 things you've already understood today. Gratitude-style reflection consolidates learning.",
+      "Stretch your forearms and wrists — often overlooked but crucial for long device sessions.",
+    ],
+    motivations: [
+      "You started when it was hard to start. That's the hardest part, and you already did it.",
+      "Every expert was once exactly where you are — confused, grinding, unsure. The difference is they kept going.",
+      "Your future self is watching this moment. Make them proud.",
+      "The discomfort you feel right now is the exact feeling of your brain growing.",
+      "Consistency beats intensity. One focused hour beats five scattered ones.",
+      "You're not just studying content — you're building the discipline muscle. That transfers to everything.",
+      "The people who seem naturally brilliant almost always just started earlier and practiced more. That's available to you right now.",
+      "Rest comes after. Right now, this is where you build the life you want.",
+    ],
+    calmResponses: [
+      "Take a breath first. Anxiety narrows our thinking. Three slow exhales (longer than your inhale) activate your parasympathetic system. Try it now.",
+      "What you're feeling is normal. High performers feel it too — the difference is they've learned it's information, not a stop sign. What specifically is making you anxious?",
+      "Zoom out for a moment. On a scale of 1–10, how will this matter in 5 years? Usually it's lower than it feels. Now zoom back in — what's one small step you can take right now?",
+      "Write down what's worrying you. Externalizing thoughts onto paper reduces their emotional weight by up to 40% in studies. Then return here.",
+      "Your nervous system doesn't distinguish between academic stress and physical danger. The antidote is the same: slow, controlled breathing and physical movement. Even 60 seconds of slow walking helps.",
+    ],
+    refocusTech: [
+      "Try the **5-4-3-2-1 grounding technique**: name 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, 1 you can taste. This interrupts distraction loops.",
+      "Close every unrelated tab or app. Set your phone face-down. Then write your exact task at the top of a blank page. The act of writing it creates an intention contract.",
+      "Use a **focus anchor**: a single sentence that describes exactly what you'll accomplish in the next 25 minutes. Pin it where you can see it.",
+      "The **rubber duck method**: explain your current topic out loud, as if teaching a rubber duck. Speaking forces clarity that silent reading doesn't.",
+      "Notice the distraction without judgment: 'I notice I want to check my phone.' Naming it reduces its power. Then return to your task. That's it.",
+    ],
+  };
+
+  // ── Intent Patterns (weighted keyword matching) ─────────
+  const intents = [
+    { id:'tip',      words:['tip','advice','how to','technique','method','strategy','study','learn','better','improve','focus','help','suggestion','way'] },
+    { id:'progress', words:['progress','doing','stats','status','how am i','performance','percentage','much','worked','time','done','left','score'] },
+    { id:'break',    words:['break','rest','pause','relax','tired','exhausted','stop','breathe','refresh','outside','walk','stretch'] },
+    { id:'motivate', words:['motivat','inspire','encourage','push','cant','give up','hard','struggling','lazy','procrastinat','dont want','boring'] },
+    { id:'calm',     words:['anxious','anxiety','stress','panic','overwhelm','scared','nervous','worry','fear','pressure','calm','relax','breathe'] },
+    { id:'refocus',  words:['distract','focus','attention','phone','social','wander','lost','drift','concentrate','refocus','mind wander','off track'] },
+    { id:'greeting', words:['hi','hello','hey','morning','evening','night','good','howdy','what up','sup','yo'] },
+    { id:'thanks',   words:['thanks','thank you','appreciate','helpful','good job','great','awesome','perfect','love it'] },
+    { id:'time',     words:['time','clock','how long','when','minutes','hours','duration','remaining','left'] },
+  ];
+
+  // ── Tokenizer ────────────────────────────────────────────
+  function tokenize(text) {
+    return text.toLowerCase()
+      .replace(/[^\w\s]/g,'')
+      .split(/\s+/)
+      .filter(w => w.length > 1);
+  }
+
+  // ── TF-IDF inspired intent classifier ───────────────────
+  function classifyIntent(text) {
+    const tokens = tokenize(text);
+    const scores = {};
+    intents.forEach(intent => {
+      let score = 0;
+      tokens.forEach(token => {
+        intent.words.forEach(kw => {
+          if (token.includes(kw) || kw.includes(token)) {
+            // longer matches score higher
+            score += (Math.min(token.length, kw.length) / Math.max(token.length, kw.length));
+          }
+        });
+      });
+      scores[intent.id] = score;
+    });
+    const best = Object.entries(scores).sort((a,b) => b[1]-a[1])[0];
+    return best[1] > 0.15 ? best[0] : 'unknown';
+  }
+
+  // ── Sentiment analyzer ───────────────────────────────────
+  const posWords = ['good','great','awesome','love','happy','excited','motivated','focused','ready','excellent','progress','done','finish','achieve'];
+  const negWords = ['bad','terrible','awful','hate','tired','exhausted','stressed','anxious','fail','lost','give up','cant','hard','difficult','boring','lazy'];
+
+  function analyzeSentiment(text) {
+    const tokens = tokenize(text);
+    let score = 0;
+    tokens.forEach(t => {
+      if (posWords.some(p => t.includes(p))) score++;
+      if (negWords.some(n => t.includes(n))) score--;
+    });
+    if (score > 0) return 'positive';
+    if (score < 0) return 'negative';
+    return 'neutral';
+  }
+
+  // ── Focus Score Calculator (decision tree) ───────────────
+  function calcFocusScore(elapsed, goal, sessions, pauses, breaksTaken) {
+    // Base score from completion percentage
+    const pct = Math.min(elapsed / goal, 1);
+    let score = pct * 60;
+
+    // Session consistency bonus (more sessions = more effort)
+    score += Math.min(sessions * 5, 20);
+
+    // Pause penalty (too many pauses reduce score)
+    const pauseRatio = sessions > 0 ? pauses / sessions : 0;
+    if (pauseRatio < 0.5) score += 15;
+    else if (pauseRatio > 2) score -= 10;
+
+    // Time of day bonus (heuristic — morning study often deeper)
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour <= 11) score += 5;
+
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  // ── Memory system ────────────────────────────────────────
+  const memory = {
+    userName: null,
+    lastTopic: null,
+    sentHistory: [],
+    sessionFacts: [],
+    turnCount: 0,
+  };
+
+  // ── Random picker with no repeat ────────────────────────
+  const usedIndices = {};
+  function pickRandom(arr, key) {
+    if (!usedIndices[key]) usedIndices[key] = [];
+    if (usedIndices[key].length >= arr.length) usedIndices[key] = [];
+    let idx;
+    do { idx = Math.floor(Math.random() * arr.length); }
+    while (usedIndices[key].includes(idx));
+    usedIndices[key].push(idx);
+    return arr[idx];
+  }
+
+  // ── Context builder ──────────────────────────────────────
+  function buildContext(timerState) {
+    const pct = Math.floor((timerState.elapsed / timerState.goal) * 100);
+    const workedMin = Math.floor(timerState.elapsed / 60);
+    const remMin = Math.floor(Math.max(timerState.goal - timerState.elapsed, 0) / 60);
+    return { pct, workedMin, remMin, ...timerState };
+  }
+
+  // ── Main response generator ──────────────────────────────
+  function respond(userText, timerState) {
+    memory.turnCount++;
+    const intent = classifyIntent(userText);
+    const sentiment = analyzeSentiment(userText);
+    const ctx = buildContext(timerState);
+    memory.sentHistory.push(sentiment);
+    memory.lastTopic = intent;
+
+    let response = '';
+
+    // ── Intent routing ───────────────────────────────────
+    switch(intent) {
+
+      case 'greeting':
+        const greets = [
+          `Hey! Ready to make this session count? You've set a ${Math.floor(ctx.goal/60)}-minute goal. I'll be watching your back.`,
+          `Hello! I'm IRIS — your on-device study coach. No internet, no distractions, just focus. What are we working on today?`,
+          `Hi there. Let's build something today. Your ${Math.floor(ctx.goal/60)}-min goal is locked in. Hit Start when you're ready.`,
+        ];
+        response = pickRandom(greets, 'greet');
+        break;
+
+      case 'thanks':
+        const tyResponses = [
+          "You're doing the hard work — I'm just here to reflect it back. Keep going.",
+          "That means a lot. Now back to work! 😄",
+          "Glad that helped. You've got this session.",
+        ];
+        response = pickRandom(tyResponses, 'ty');
+        break;
+
+      case 'tip':
+        response = pickRandom(KB.studyTips, 'tips');
+        if (ctx.workedMin > 0) {
+          response += `\n\n*You've been at this for ${ctx.workedMin} minutes — a solid stretch. Apply this tip to your next segment.*`;
+        }
+        break;
+
+      case 'progress':
+        response = generateProgressReport(ctx);
+        break;
+
+      case 'break':
+        response = `You've worked **${ctx.workedMin} minutes** (${ctx.pct}% done) — you've earned this.\n\n`;
+        response += pickRandom(KB.breakIdeas, 'break');
+        response += `\n\n*Come back in 5–10 minutes. Your brain is consolidating what you just studied.*`;
+        break;
+
+      case 'motivate':
+        if (sentiment === 'negative') {
+          response = `I hear you — it's tough right now. That's actually a signal you're pushing into growth territory.\n\n`;
+        }
+        response += pickRandom(KB.motivations, 'motivate');
+        if (ctx.pct > 0) {
+          response += `\n\n*You're already ${ctx.pct}% there. The version of you who quits now and the version who finishes are separated by just ${ctx.remMin} minutes.*`;
+        }
+        break;
+
+      case 'calm':
+        response = pickRandom(KB.calmResponses, 'calm');
+        response += `\n\n*When you're ready, I'm here.*`;
+        break;
+
+      case 'refocus':
+        response = pickRandom(KB.refocusTech, 'refocus');
+        if (ctx.running) {
+          response += `\n\n*Your timer is still running — you've got ${ctx.remMin} min left. Small recalibration, then back in.*`;
+        }
+        break;
+
+      case 'time':
+        response = generateProgressReport(ctx);
+        break;
+
+      default:
+        response = generateContextualResponse(userText, ctx, sentiment);
+        break;
+    }
+
+    // ── Mood update ──────────────────────────────────────
+    updateMood(ctx, sentiment);
+
+    return response;
+  }
+
+  function generateProgressReport(ctx) {
+    const score = calcFocusScore(ctx.elapsed, ctx.goal, ctx.sessions, ctx.pauses, ctx.breaks);
+
+    if (ctx.elapsed === 0) {
+      return `Your session hasn't started yet. You've set a **${Math.floor(ctx.goal/60)}-minute goal**. Hit the button and let's go — IRIS will track everything for you.`;
+    }
+
+    let report = `📊 **Session Snapshot**\n\n`;
+    report += `• Time worked: **${ctx.workedMin} min** (${ctx.pct}%)\n`;
+    report += `• Remaining: **${ctx.remMin} min**\n`;
+    report += `• Sessions: **${ctx.sessions}** | Pauses: **${ctx.pauses}**\n`;
+    report += `• Focus score: **${score}/100**\n\n`;
+
+    if (ctx.pct < 25) report += `You're in the warm-up zone. Momentum builds soon — stick with it.`;
+    else if (ctx.pct < 50) report += `Quarter-way through. This is where most people drift — don't be most people.`;
+    else if (ctx.pct < 75) report += `Halfway done. The back half always feels shorter. You've got this.`;
+    else if (ctx.pct < 100) report += `Final stretch! ${ctx.remMin} minutes between you and your goal. Push.`;
+    else report += `Goal achieved. You've done something most people only plan to do.`;
+
+    return report;
+  }
+
+  function generateContextualResponse(text, ctx, sentiment) {
+    // Fallback: generate a context-aware general response
+    const fallbacks = [
+      ctx.elapsed > 0
+        ? `You've been studying for ${ctx.workedMin} minutes — that's real work. What's specifically on your mind?`
+        : `I'm IRIS, your on-device AI coach. I don't need internet — all my intelligence runs locally on your device. Ask me anything about studying, focus, or how you're doing.`,
+      `I'm processing that... My local model is optimized for study coaching. Could you rephrase? For example: "give me a tip", "how am I doing", or "I feel distracted".`,
+      `Interesting. I'm a locally-running AI, so my knowledge is specialized around focus and learning. Try asking me for a study tip, motivation, or a progress update!`,
+      sentiment === 'negative'
+        ? `Sounds like things feel tough right now. That's okay. Want a motivation boost, a calming technique, or a concrete study tip to get back on track?`
+        : `Got it! I'm here to support your study session. Ask me for tips, motivation, a progress check, or break ideas.`,
+    ];
+    return pickRandom(fallbacks, 'fallback');
+  }
+
+  function updateMood(ctx, sentiment) {
+    const pct = ctx.pct;
+    const fill = document.getElementById('moodFill');
+    const emoji = document.getElementById('moodEmoji');
+    const label = document.getElementById('moodLabel');
+    if (!fill) return;
+
+    let energy = 20 + pct * 0.6;
+    if (sentiment === 'positive') energy = Math.min(100, energy + 15);
+    if (sentiment === 'negative') energy = Math.max(5, energy - 10);
+    if (ctx.running) energy = Math.min(100, energy + 10);
+
+    fill.style.width = energy + '%';
+
+    if (energy < 25) { fill.style.background='var(--muted)'; emoji.textContent='🌱'; label.textContent='WARMING UP'; }
+    else if (energy < 50) { fill.style.background='var(--warm)'; emoji.textContent='🔥'; label.textContent='BUILDING'; }
+    else if (energy < 75) { fill.style.background='var(--accent)'; emoji.textContent='⚡'; label.textContent='IN THE ZONE'; }
+    else { fill.style.background='linear-gradient(90deg,var(--accent),var(--ai))'; emoji.textContent='🚀'; label.textContent='PEAK FOCUS'; }
+  }
+
+  return { respond, calcFocusScore, analyzeSentiment };
+})();
+
+// ════════════════════════════════════════════════════════
+//  TIMER ENGINE
+// ════════════════════════════════════════════════════════
+const CIRC = 2 * Math.PI * 105; // r=105 → 659.7
+
+let goalSec   = 120 * 60;
+let elapsed   = 0;
+let running   = false;
+let tid       = null;
+let sessStart = null;
+let sessCount = 0;
+let pauseCount= 0;
+let breakMark = [];
 
 const ringProg  = document.getElementById('ringProg');
 const dispTime  = document.getElementById('dispTime');
@@ -423,39 +974,44 @@ const dispPct   = document.getElementById('dispPct');
 const dispStatus= document.getElementById('dispStatus');
 const mainBtn   = document.getElementById('mainBtn');
 const resetBtn  = document.getElementById('resetBtn');
-const breakBanner=document.getElementById('breakBanner');
-const logList   = document.getElementById('logList');
+const breakStrip= document.getElementById('breakStrip');
+const logScroll = document.getElementById('logScroll');
 const logEmpty  = document.getElementById('logEmpty');
 
 function fmt(s){
   const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
 }
-function fmtShort(s){
+function fmtS(s){
   const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);
-  if(h>0)return `${h}h ${m}m`;
-  return `${m}m ${s%60}s`;
+  if(h>0)return`${h}h ${m}m`;
+  return`${m}m ${s%60}s`;
 }
 
 function updateRing(){
-  const pct = Math.min(elapsed/goalSec,1);
-  ringProg.style.strokeDashoffset = CIRC*(1-pct);
-  if(pct>=1){ringProg.style.stroke='var(--green)';ringProg.style.filter='drop-shadow(0 0 9px var(--green))';}
-  else{ringProg.style.stroke='var(--accent)';ringProg.style.filter='drop-shadow(0 0 7px var(--accent))';}
-  dispTime.textContent = fmt(elapsed);
-  dispPct.textContent  = Math.floor(pct*100)+'% done';
-  document.getElementById('sWorked').textContent  = fmtShort(elapsed);
+  const pct=Math.min(elapsed/goalSec,1);
+  ringProg.style.strokeDashoffset=CIRC*(1-pct);
+  if(pct>=1){
+    ringProg.style.stroke='var(--ai)';
+    ringProg.style.filter='drop-shadow(0 0 10px var(--ai))';
+  } else {
+    ringProg.style.stroke='var(--accent)';
+    ringProg.style.filter='drop-shadow(0 0 8px var(--accent))';
+  }
+  dispTime.textContent=fmt(elapsed);
+  dispPct.textContent=Math.floor(pct*100)+'% complete';
+  document.getElementById('sWorked').textContent=fmtS(elapsed);
   const rem=Math.max(goalSec-elapsed,0);
-  document.getElementById('sRemain').textContent  = rem>0?fmtShort(rem):'—';
+  document.getElementById('sRemain').textContent=rem>0?fmtS(rem):'—';
 }
 
 function addLog(type,dur){
   logEmpty.style.display='none';
-  const e=document.createElement('div');
-  e.className='log-entry';
+  const el=document.createElement('div');
+  el.className='log-item';
   const t=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  e.innerHTML=`<div class="ld ${type}"></div><div class="lt">${type==='work'?'Work':'Pause'} · ${t}</div><div class="ldur">${fmtShort(dur)}</div>`;
-  logList.prepend(e);
+  el.innerHTML=`<div class="ld ${type}"></div><div class="lt">${type==='work'?'Focus':'Pause'} · ${t}</div><div class="ldur">${fmtS(dur)}</div>`;
+  logScroll.prepend(el);
 }
 
 function checkBreak(){
@@ -463,57 +1019,85 @@ function checkBreak(){
   const mile=Math.floor(m/25)*25;
   if(mile>0&&!breakMark.includes(mile)){
     breakMark.push(mile);
-    breakBanner.classList.add('show');
-    setTimeout(()=>breakBanner.classList.remove('show'),9000);
-    // AI automatically cheers
-    addAiMessage(`⏰ You've hit the **${mile}-minute mark** — that's a solid stretch of focus! Consider a 5-minute break: stand up, breathe, hydrate. You're ${Math.floor(elapsed/goalSec*100)}% toward your goal. Keep it up!`);
+    breakStrip.classList.add('show');
+    setTimeout(()=>breakStrip.classList.remove('show'),10000);
+    // IRIS auto-message
+    setTimeout(()=>{
+      const ctx=getTimerState();
+      const msg=`⏱ **${mile}-minute milestone!** ${IRIS.respond('break', ctx)}`;
+      addAiMsg(msg);
+    },800);
   }
 }
 
+function getTimerState(){
+  return{
+    elapsed, goal:goalSec, running,
+    sessions:sessCount, pauses:pauseCount, breaks:breakMark.length,
+  };
+}
+
 function startTimer(){
-  running=true;sessStart=Date.now()-elapsed*1000;
-  sessCount++;document.getElementById('sSessions').textContent=sessCount;
-  dispStatus.textContent='Focusing...';dispStatus.style.color='var(--green)';
+  running=true;
+  sessStart=Date.now()-elapsed*1000;
+  sessCount++;
+  document.getElementById('sSess').textContent=sessCount;
+  dispStatus.textContent='focusing';
+  dispStatus.style.color='var(--accent)';
   mainBtn.innerHTML='⏸ &nbsp;Pause';
-  mainBtn.classList.remove('btn-go');mainBtn.classList.add('btn-pause-style');
-  timer=setInterval(()=>{elapsed++;updateRing();checkBreak();if(elapsed>=goalSec)completeGoal();},1000);
+  mainBtn.classList.add('paused');
+  tid=setInterval(()=>{
+    elapsed++;
+    updateRing();
+    checkBreak();
+    if(elapsed>=goalSec)completeGoal();
+  },1000);
 }
 
 function pauseTimer(){
-  running=false;clearInterval(timer);
+  running=false;clearInterval(tid);
   const dur=Math.round((Date.now()-sessStart)/1000);
   addLog('work',dur);
-  pauseCount++;document.getElementById('sBreaks').textContent=pauseCount;
-  dispStatus.textContent='Paused';dispStatus.style.color='var(--muted)';
+  pauseCount++;
+  document.getElementById('sPause').textContent=pauseCount;
+  dispStatus.textContent='paused';
+  dispStatus.style.color='var(--muted)';
   mainBtn.innerHTML='▶ &nbsp;Resume';
-  mainBtn.classList.add('btn-go');mainBtn.classList.remove('btn-pause-style');
+  mainBtn.classList.remove('paused');
 }
 
 function toggleTimer(){if(running)pauseTimer();else startTimer();}
 
 function resetAll(){
-  clearInterval(timer);running=false;elapsed=0;sessCount=0;pauseCount=0;breakMark=[];
-  document.getElementById('sSessions').textContent='0';
-  document.getElementById('sBreaks').textContent='0';
-  dispStatus.textContent='Ready';dispStatus.style.color='';
-  mainBtn.innerHTML='▶ &nbsp;Start Session';
-  mainBtn.classList.add('btn-go');mainBtn.classList.remove('btn-pause-style');
-  breakBanner.classList.remove('show');
+  clearInterval(tid);
+  running=false;elapsed=0;sessCount=0;pauseCount=0;breakMark=[];
+  document.getElementById('sSess').textContent='0';
+  document.getElementById('sPause').textContent='0';
+  dispStatus.textContent='ready';dispStatus.style.color='';
+  mainBtn.innerHTML='▶ &nbsp;Begin Focus';
+  mainBtn.classList.remove('paused');
+  breakStrip.classList.remove('show');
   logEmpty.style.display='';
-  Array.from(logList.querySelectorAll('.log-entry')).forEach(e=>e.remove());
+  Array.from(logScroll.querySelectorAll('.log-item')).forEach(e=>e.remove());
   updateRing();
+  document.getElementById('sRemain').textContent=fmtS(goalSec);
 }
 
 function completeGoal(){
-  clearInterval(timer);running=false;
-  dispStatus.textContent='Done! 🎉';dispStatus.style.color='var(--green)';
-  mainBtn.innerHTML='▶ &nbsp;Start Session';mainBtn.classList.add('btn-go');mainBtn.classList.remove('btn-pause-style');
-  document.getElementById('ovSub').textContent=`You focused for ${fmtShort(elapsed)} today. Outstanding!`;
+  clearInterval(tid);running=false;
+  dispStatus.textContent='complete!';dispStatus.style.color='var(--ai)';
+  mainBtn.innerHTML='▶ &nbsp;Begin Focus';mainBtn.classList.remove('paused');
+  const score=IRIS.calcFocusScore(elapsed,goalSec,sessCount,pauseCount,breakMark.length);
+  document.getElementById('ovTime').textContent=fmtS(elapsed);
+  document.getElementById('ovSess').textContent=sessCount;
+  document.getElementById('ovScore').textContent=score+'/100';
   document.getElementById('overlay').classList.add('show');
-  addAiMessage(`🏆 **Goal complete!** You just finished ${fmtShort(elapsed)} of focused study — that's a real achievement. Take a proper break, celebrate, and come back tomorrow refreshed. I'm proud of your dedication!`);
+  setTimeout(()=>{
+    addAiMsg(`🏆 **Goal complete!** You just finished ${fmtS(elapsed)} of focused study. Focus score: **${score}/100**. ${score>80?'Outstanding performance.':score>60?'Solid work today.':'Keep building the habit — consistency beats perfection.'}`);
+  },500);
 }
 
-// ── Presets ───────────────────────────────────────────────────────────────────
+// Presets
 document.querySelectorAll('.preset').forEach(b=>{
   b.addEventListener('click',()=>{
     if(running)return;
@@ -522,7 +1106,7 @@ document.querySelectorAll('.preset').forEach(b=>{
     const m=parseInt(b.dataset.min);
     document.getElementById('customMin').value=m;
     goalSec=m*60;elapsed=0;updateRing();
-    document.getElementById('sRemain').textContent=fmtShort(goalSec);
+    document.getElementById('sRemain').textContent=fmtS(goalSec);
   });
 });
 document.getElementById('customMin').addEventListener('input',function(){
@@ -530,7 +1114,7 @@ document.getElementById('customMin').addEventListener('input',function(){
   const v=Math.max(1,Math.min(720,parseInt(this.value)||1));
   goalSec=v*60;elapsed=0;
   document.querySelectorAll('.preset').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.min)===v));
-  updateRing();document.getElementById('sRemain').textContent=fmtShort(goalSec);
+  updateRing();document.getElementById('sRemain').textContent=fmtS(goalSec);
 });
 
 mainBtn.addEventListener('click',toggleTimer);
@@ -541,59 +1125,43 @@ document.addEventListener('keydown',e=>{
   if(e.code==='KeyR'&&!running)resetAll();
 });
 
-// ─── AI Chat ─────────────────────────────────────────────────────────────────
-const chatBody  = document.getElementById('chatBody');
-const chatInput = document.getElementById('chatInput');
-const sendBtn   = document.getElementById('sendBtn');
+// ════════════════════════════════════════════════════════
+//  CHAT ENGINE
+// ════════════════════════════════════════════════════════
+const chatMessages = document.getElementById('chatMessages');
+const chatInput    = document.getElementById('chatInput');
+const sendBtn      = document.getElementById('sendBtn');
 
-// Conversation history for multi-turn memory
-let chatHistory = [];
-
-function getTimerContext(){
-  const pct=Math.floor(elapsed/goalSec*100);
-  const goalMin=Math.floor(goalSec/60);
-  const workedMin=Math.floor(elapsed/60);
-  const remMin=Math.floor(Math.max(goalSec-elapsed,0)/60);
-  return `[TIMER CONTEXT]
-- Study goal: ${goalMin} minutes
-- Time worked so far: ${workedMin} minutes (${pct}% complete)
-- Time remaining: ${remMin} minutes
-- Number of focus sessions: ${sessCount}
-- Number of pauses taken: ${pauseCount}
-- Timer status: ${running?'Currently running (user is actively studying)':'Paused or not started'}`;
+function addUserMsg(text){
+  const el=document.createElement('div');
+  el.className='msg user';
+  const t=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  el.innerHTML=`<div class="msg-av">👤</div><div><div class="msg-b">${escHtml(text)}</div><div class="msg-time">${t}</div></div>`;
+  chatMessages.appendChild(el);
+  chatMessages.scrollTop=chatMessages.scrollHeight;
 }
 
-function addUserBubble(text){
-  const div=document.createElement('div');
-  div.className='msg user';
-  div.innerHTML=`<div class="msg-avatar">👤</div><div class="msg-bubble">${escHtml(text)}</div>`;
-  chatBody.appendChild(div);
-  chatBody.scrollTop=chatBody.scrollHeight;
+function addAiMsg(text){
+  const el=document.createElement('div');
+  el.className='msg ai';
+  const t=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  el.innerHTML=`<div class="msg-av">🧬</div><div><div class="msg-b">${renderMd(text)}</div><div class="msg-time">${t}</div></div>`;
+  chatMessages.appendChild(el);
+  chatMessages.scrollTop=chatMessages.scrollHeight;
 }
 
-function addAiMessage(text){
-  const div=document.createElement('div');
-  div.className='msg ai';
-  div.innerHTML=`<div class="msg-avatar">🧠</div><div class="msg-bubble">${renderMd(text)}</div>`;
-  chatBody.appendChild(div);
-  chatBody.scrollTop=chatBody.scrollHeight;
-}
-
-function addTyping(){
-  const div=document.createElement('div');
-  div.className='msg ai';div.id='typing';
-  div.innerHTML=`<div class="msg-avatar">🧠</div><div class="msg-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
-  chatBody.appendChild(div);
-  chatBody.scrollTop=chatBody.scrollHeight;
-  return div;
+function showThinking(){
+  const el=document.createElement('div');
+  el.className='msg ai';el.id='thinking';
+  el.innerHTML=`<div class="msg-av">🧬</div><div class="msg-b"><div class="thinking"><span></span><span></span><span></span></div></div>`;
+  chatMessages.appendChild(el);
+  chatMessages.scrollTop=chatMessages.scrollHeight;
 }
 
 function escHtml(t){
   return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
-
 function renderMd(text){
-  // Simple markdown: **bold**, *italic*, newlines
   return text
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
@@ -601,95 +1169,51 @@ function renderMd(text){
     .replace(/\n/g,'<br>');
 }
 
-async function sendMessage(userText){
-  if(!userText.trim())return;
+function sendMessage(text){
+  if(!text.trim())return;
+  addUserMsg(text);
   sendBtn.disabled=true;
+  showThinking();
 
-  addUserBubble(userText);
-  chatHistory.push({role:'user',content:userText});
-
-  const typingEl=addTyping();
-
-  const systemPrompt=`You are Nova, a friendly, knowledgeable, and encouraging AI study coach embedded inside FocusFlow — a study timer app. Your personality is warm, motivating, direct, and occasionally witty. You help students stay focused, manage their time, develop good study habits, and feel supported.
-
-You have real-time access to the user's timer data shown below. Use this context naturally in your responses — reference how much they've worked, celebrate milestones, give advice relevant to where they are in their session.
-
-${getTimerContext()}
-
-Guidelines:
-- Keep responses concise (2-5 sentences usually). Be conversational.
-- Use the timer context naturally — don't just read it back, weave it in.
-- Use **bold** for emphasis occasionally.
-- Celebrate progress genuinely. Don't be sycophantic.
-- For study tips, give specific, actionable advice.
-- If asked about break activities, suggest real things (stretch, hydrate, walk, etc.)
-- You can use light emoji but don't overdo it.`;
-
-  try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':'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','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        system:systemPrompt,
-        messages:chatHistory
-      })
-    });
-    const data=await resp.json();
-    typingEl.remove();
-
-    if(data.content&&data.content[0]){
-      const aiText=data.content[0].text;
-      chatHistory.push({role:'assistant',content:aiText});
-      addAiMessage(aiText);
-    } else {
-      addAiMessage("I'm having a little trouble connecting right now. Try again in a moment!");
-    }
-  } catch(err){
-    typingEl.remove();
-    addAiMessage("Connection hiccup! Make sure you're online and try again.");
-  }
-
-  sendBtn.disabled=false;
-  chatInput.focus();
+  // Simulate local "processing" delay (realistic feel)
+  const delay = 400 + Math.random()*600;
+  setTimeout(()=>{
+    document.getElementById('thinking')?.remove();
+    const response = IRIS.respond(text, getTimerState());
+    addAiMsg(response);
+    sendBtn.disabled=false;
+    chatInput.focus();
+  }, delay);
 }
 
-function sendQuick(text){
-  chatInput.value='';
-  sendMessage(text);
-}
+function sendQ(q){chatInput.value='';sendMessage(q);}
 
 sendBtn.addEventListener('click',()=>{
   const v=chatInput.value.trim();
-  chatInput.value='';
-  autoResize();
+  chatInput.value='';autoResize();
   sendMessage(v);
 });
-
 chatInput.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&!e.shiftKey){
     e.preventDefault();
     const v=chatInput.value.trim();
-    chatInput.value='';
-    autoResize();
+    chatInput.value='';autoResize();
     sendMessage(v);
   }
 });
-
 function autoResize(){
   chatInput.style.height='auto';
-  chatInput.style.height=Math.min(chatInput.scrollHeight,100)+'px';
+  chatInput.style.height=Math.min(chatInput.scrollHeight,90)+'px';
 }
 chatInput.addEventListener('input',autoResize);
 
-// ─── Welcome message ──────────────────────────────────────────────────────────
+// ── Boot ──────────────────────────────────────────────
 window.addEventListener('load',()=>{
   updateRing();
-  document.getElementById('sRemain').textContent=fmtShort(goalSec);
+  document.getElementById('sRemain').textContent=fmtS(goalSec);
   setTimeout(()=>{
-    addAiMessage("Hey! 👋 I'm **Nova**, your AI study coach. Set your goal above, hit **Start**, and I'll be right here to keep you on track. Feel free to ask me anything — tips, motivation, break ideas, or just a check-in. Let's make today count!");
-  },400);
+    addAiMsg("Hey! I'm **IRIS** — your on-device AI study coach. I run entirely on your phone, no internet needed. 🧬\n\nSet your goal, hit **Begin Focus**, and I'll track your progress, remind you to rest, and keep your mind sharp.\n\nWhat are we studying today?");
+  },600);
 });
 </script>
 </body>
